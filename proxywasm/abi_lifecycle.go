@@ -14,6 +14,10 @@
 
 package proxywasm
 
+import (
+	"runtime"
+)
+
 //export proxy_on_context_create
 func proxyOnContextCreate(contextID uint32, rootContextID uint32) {
 	if rootContextID == 0 {
@@ -27,8 +31,24 @@ func proxyOnContextCreate(contextID uint32, rootContextID uint32) {
 	}
 }
 
+type ByteSize float64
+
+const (
+	_           = iota // ignore first value by assigning to blank identifier
+	KB ByteSize = 1 << (10 * iota)
+	MB
+	GB
+)
+
+func printMem() {
+	stats := new(runtime.MemStats)
+	runtime.ReadMemStats(stats)
+	LogInfof("KB: %f\n", ByteSize(stats.Alloc)/KB)
+}
+
 //export proxy_on_done
 func proxyOnDone(contextID uint32) bool {
+	printMem()
 	LogInfof("len context id to roo id: %d", len(currentState.contextIDToRooID))
 	LogInfof("len streams: %d", len(currentState.streams))
 	LogInfof("len httpStreams: %d", len(currentState.httpStreams))
