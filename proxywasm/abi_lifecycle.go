@@ -33,17 +33,20 @@ func proxyOnDone(contextID uint32) bool {
 	if ctx, ok := currentState.streams[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		delete(currentState.streams, contextID)
+		delete(currentState.contextIDToRooID, contextID)
 		ctx.OnStreamDone()
 		return true
 	} else if ctx, ok := currentState.httpStreams[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		ctx.OnHttpStreamDone()
 		delete(currentState.httpStreams, contextID)
+		delete(currentState.contextIDToRooID, contextID)
 		return true
 	} else if ctx, ok := currentState.rootContexts[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		response := ctx.context.OnVMDone()
 		delete(currentState.rootContexts, contextID)
+		delete(currentState.contextIDToRooID, contextID)
 		return response
 	} else {
 		panic("invalid context on proxy_on_done")
