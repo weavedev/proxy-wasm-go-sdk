@@ -14,6 +14,8 @@
 
 package proxywasm
 
+import "unsafe"
+
 //export proxy_on_context_create
 func proxyOnContextCreate(contextID uint32, rootContextID uint32) {
 	if rootContextID == 0 {
@@ -29,24 +31,29 @@ func proxyOnContextCreate(contextID uint32, rootContextID uint32) {
 
 //export proxy_on_done
 func proxyOnDone(contextID uint32) bool {
+	LogInfof("Test: %v", unsafe.Sizeof(currentState))
 	LogInfof("len context id to roo id: %d", len(currentState.contextIDToRooID))
+	defer func() {
+		_, ok := currentState.contextIDToRooID[contextID]
+		if !ok {
+			LogInfo("could not find context id in context to roo id")
+		}
+		delete(currentState.contextIDToRooID, contextID)
+	}()
 	if ctx, ok := currentState.streams[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		delete(currentState.streams, contextID)
-		delete(currentState.contextIDToRooID, contextID)
 		ctx.OnStreamDone()
 		return true
 	} else if ctx, ok := currentState.httpStreams[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		ctx.OnHttpStreamDone()
 		delete(currentState.httpStreams, contextID)
-		delete(currentState.contextIDToRooID, contextID)
 		return true
 	} else if ctx, ok := currentState.rootContexts[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		response := ctx.context.OnVMDone()
 		delete(currentState.rootContexts, contextID)
-		delete(currentState.contextIDToRooID, contextID)
 		return response
 	} else {
 		panic("invalid context on proxy_on_done")
