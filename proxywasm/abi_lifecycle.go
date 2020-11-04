@@ -14,10 +14,6 @@
 
 package proxywasm
 
-import (
-	"runtime"
-)
-
 //export proxy_on_context_create
 func proxyOnContextCreate(contextID uint32, rootContextID uint32) {
 	if rootContextID == 0 {
@@ -35,25 +31,8 @@ type ByteSize float64
 
 //export proxy_on_done
 func proxyOnDone(contextID uint32) bool {
-	LogInfof("len context id to roo id: %d", len(currentState.contextIDToRooID))
-	LogInfof("len streams: %d", len(currentState.streams))
-	LogInfof("len httpStreams: %d", len(currentState.httpStreams))
-	LogInfof("len rootContexts: %d", len(currentState.rootContexts))
 	defer func() {
-		_, ok := currentState.contextIDToRooID[contextID]
-		if !ok {
-			LogInfo("could not find context id in context to roo id")
-		}
 		delete(currentState.contextIDToRooID, contextID)
-		// sanity check
-		_, ok = currentState.contextIDToRooID[contextID]
-		if !ok {
-			LogInfo("removed correctly")
-			LogInfof("len context id to roo id: %d", len(currentState.contextIDToRooID))
-		} else {
-			LogError("was not removed correctly")
-		}
-		runtime.GC()
 	}()
 	if ctx, ok := currentState.streams[contextID]; ok {
 		currentState.setActiveContextID(contextID)
