@@ -15,7 +15,7 @@
 package proxywasm
 
 //export proxy_on_context_create
-func proxyOnContextCreate(contextID uint32, rootContextID uint32) {
+func proxyOnContextCreate(contextID, rootContextID uint32) {
 	if rootContextID == 0 {
 		currentState.createRootContext(contextID)
 	} else if currentState.newHttpContext != nil {
@@ -27,11 +27,22 @@ func proxyOnContextCreate(contextID uint32, rootContextID uint32) {
 	}
 }
 
+type ByteSize float64
+
 //export proxy_on_done
 func proxyOnDone(contextID uint32) bool {
 	defer func() {
 		delete(currentState.contextIDToRootID, contextID)
 	}()
+	LogInfof("len contextIDToRootID: %d", len(currentState.contextIDToRootID))
+	LogInfof("len streams: %d", len(currentState.streams))
+	LogInfof("len httpStreams: %d", len(currentState.httpStreams))
+	LogInfof("len rootContexts: %d", len(currentState.rootContexts))
+
+	for i, rc := range currentState.rootContexts {
+		LogInfof("len rootContexts[%d].httpCallbacks: %d", i, len(rc.httpCallbacks))
+	}
+
 	if ctx, ok := currentState.streams[contextID]; ok {
 		currentState.setActiveContextID(contextID)
 		delete(currentState.streams, contextID)
